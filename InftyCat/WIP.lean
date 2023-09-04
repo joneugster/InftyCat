@@ -1,0 +1,7 @@
+import Mathlib.AlgebraicTopology.SimplicialSet
+import Mathlib.AlgebraicTopology.SimplicialObject
+import Mathlib.AlgebraicTopology.SimplexCategory
+
+open CategoryTheory
+
+#check SSet
