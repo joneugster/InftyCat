@@ -62,7 +62,7 @@ structure WeakFactorisationSystem (L R : MorphismProperty M) where
 def MorphismProperty.intersection (A B : MorphismProperty M) : MorphismProperty M :=
   fun X Y f => A f ∧ B f
 
--- def MorphismProperty.2outOf3 (A : MorphismProperty M) : Boolean :=
+-- def MorphismProperty.2outOf3 (A : MorphismProperty M) : Prop :=
 --   fun X Y f => A f ∧ B f
 --   fun X Y f, Y Z g
 
