@@ -18,34 +18,58 @@ def MorphismProperty.implies (A B : MorphismProperty C) : Prop :=
 
 def leftLiftingProperty (I : MorphismProperty C) : MorphismProperty C :=
   fun _ _ f =>
-    ∀ x y, ∀ (u : x ⟶ y), I u → HasLiftingProperty f u
+    ∀ x y, ∀ (i : x ⟶ y), I i → HasLiftingProperty f i
 
 def rightLiftingProperty (I : MorphismProperty C) : MorphismProperty C :=
   fun _ _ f =>
-    ∀ x y, ∀ (u : x ⟶ y), I u → HasLiftingProperty u f
+    ∀ x y, ∀ (i : x ⟶ y), I i → HasLiftingProperty i f
 
-def HasLeftLiftingProperty (A B : MorphismProperty C) : Prop :=
+
+class HasLeftLiftingProperty {x y: C} (I : MorphismProperty C) (f : x ⟶ y)
+  : Prop where
+  lift : (leftLiftingProperty I) f
+
+class HasRightLiftingProperty {x y: C} (I : MorphismProperty C) (f : x ⟶ y)
+  : Prop where
+  lift : (rightLiftingProperty I) f
+
+
+def has_llp (A B : MorphismProperty C) : Prop :=
   MorphismProperty.implies A (leftLiftingProperty B)
 
-def HasRightLiftingProperty (A B : MorphismProperty C) : Prop :=
+def has_rlp (A B : MorphismProperty C) : Prop :=
   MorphismProperty.implies A (rightLiftingProperty B)
 
-/- Maybe change the name: the lemma says that f has the llp relatively to g
-  iff op(g) has the llp relatively to op(f)
-  This result makes it possible for us to dualize results on classes rlp(I)
-  to results on classes llp(I)
- -/
-lemma LiftingProperties.lift_op {x y z w : C} (f : x ⟶ y) (g: z ⟶ w)
-  : (HasLiftingProperty f g) ↔ (HasLiftingProperty g.op f.op) :=
-  sorry
+/- This result makes it possible for us to dualize results on classes rlp(I)
+   to results on classes llp(I) -/
+#check HasLiftingProperty.op
 
+instance HasRightLiftingProperty.of_iso {x y : C} (i : x ⟶ y)
+  (I : MorphismProperty C) [IsIso i]
+  : HasRightLiftingProperty I i := ⟨
+    by
+      rw [rightLiftingProperty]
+      intro z
+      intro w
+      intro f
+      intro _
+      exact HasLiftingProperty.of_right_iso f i
+  ⟩
 
-lemma iso_rlp {x y : C} (f : x ≅ y) (I : MorphismProperty C)
-  : (rightLiftingProperty I) f.hom :=
-  sorry
+instance HasRightLiftingProperty.of_comp {x y z: C} (f : x ⟶ y) (g : y ⟶ z)
+  (I : MorphismProperty C)
+  [fRlp: HasRightLiftingProperty I f]
+  [gRlp: HasRightLiftingProperty I g]
+  : HasRightLiftingProperty I (f ≫ g) := ⟨
+    by
+      rw [rightLiftingProperty]
+      intro z
+      intro w
+      intro i
+      intro hiI
+      exact @HasLiftingProperty.of_comp_right _ _ _ _ _ _ _ i f g
+        (fRlp.lift z w i hiI) (gRlp.lift z w i hiI)    
+  ⟩
 
-lemma comp_rlp {x y z : C} (f : x ⟶ y) (g : y ⟶ z) (I : MorphismProperty C)
-  : (rightLiftingProperty I) (f ≫ g) :=
-  sorry
 
 -- Lemma: relate llp(I) and rlp(op(I))
