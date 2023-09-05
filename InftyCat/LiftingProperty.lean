@@ -33,13 +33,6 @@ class HasRightLiftingProperty {x y: C} (I : MorphismProperty C) (f : x ⟶ y)
   : Prop where
   lift : (rightLiftingProperty I) f
 
-
-def has_llp (A B : MorphismProperty C) : Prop :=
-  MorphismProperty.implies A (leftLiftingProperty B)
-
-def has_rlp (A B : MorphismProperty C) : Prop :=
-  MorphismProperty.implies A (rightLiftingProperty B)
-
 /- This result makes it possible for us to dualize results on classes rlp(I)
    to results on classes llp(I) -/
 #check HasLiftingProperty.op
@@ -70,6 +63,14 @@ instance HasRightLiftingProperty.of_comp {x y z: C} (f : x ⟶ y) (g : y ⟶ z)
       exact @HasLiftingProperty.of_comp_right _ _ _ _ _ _ _ i f g
         (fRlp.lift z w i hiI) (gRlp.lift z w i hiI)    
   ⟩
+
+
+
+-- Stability properties
+
+-- def Stab
+
+
 
 
 -- Lemma: relate llp(I) and rlp(op(I))
