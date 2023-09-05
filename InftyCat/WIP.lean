@@ -5,6 +5,8 @@ import Mathlib.AlgebraicTopology.SimplexCategory
 import Mathlib.CategoryTheory.LiftingProperties.Basic
 import Mathlib
 
+import InftyCat.LiftingProperty
+
 open CategoryTheory
 
 #check SSet
@@ -69,16 +71,14 @@ structure WeakFactorisationSystem (L R : MorphismProperty M) where
   h₃ {X Y : M} (f : X ⟶ Y) : L (facLeft f)
   h₄ {X Y : M} (f : X ⟶ Y) : R (facRight f)
 
-def MorphismProperty.intersection (A B : MorphismProperty M) : MorphismProperty M :=
-  fun {_X _Y} f => A f ∧ B f
-
 structure twoOutOfThree {X Y Z : M} (P : MorphismProperty M) where
   comp {f : X ⟶ Y} {g : Y ⟶ Z} : P f → P g → P (f ≫ g)
-  left {f : X ⟶ Y} {g : Y ⟶ Z} : P g → P (f ≫ g) ⟶ P f
+  left {f : X ⟶ Y} {g : Y ⟶ Z} : P g → P (f ≫ g) → P f
   right {f : X ⟶ Y} {g : Y ⟶ Z} : P f → P (f ≫ g) → P g
 
 structure ModelCategory (C F W : MorphismProperty M) where
   p₁ : WeakFactorisationSystem (MorphismProperty.intersection C W) F
+
 
 
 
