@@ -45,9 +45,19 @@ variable {M : Type u} [Category M]
 
 #check MorphismProperty
 
-def LLP (R : MorphismProperty M) : MorphismProperty M := sorry
-def RLP (L : MorphismProperty M) : MorphismProperty M := sorry
+/-- `LLP R` is a `MorphismProperty M` where a morphism `f` has this property iff
+it has the Left-Lifting-Property (LLP) with respect to all morphisms `g` with
+Morphism Property `R`. -/
+def LLP (R : MorphismProperty M) : MorphismProperty M :=
+  fun {A B} f =>
+    ∀ {X Y : M} {g : X ⟶ Y} {a : A ⟶ X} {b : B ⟶ Y} (sq : CommSq a f g b), R g → sq.HasLift
 
+/-- `RLP R` is a `MorphismProperty M` where a morphism `f` has this property iff
+it has the Right-Lifting-Property (RLP) with respect to all morphisms `g` with
+Morphism Property `R`. -/
+def RLP (L : MorphismProperty M) : MorphismProperty M :=
+  fun {X Y} g =>
+    ∀ {A B : M} {f : A ⟶ B} {a : A ⟶ X} {b : B ⟶ Y} (sq : CommSq a f g b), L f → sq.HasLift
 
 structure WeakFactorisationSystem (L R : MorphismProperty M) where
   h₁ : L = LLP R
@@ -60,22 +70,26 @@ structure WeakFactorisationSystem (L R : MorphismProperty M) where
   h₄ {X Y : M} (f : X ⟶ Y) : R (facRight f)
 
 def MorphismProperty.intersection (A B : MorphismProperty M) : MorphismProperty M :=
-  fun X Y f => A f ∧ B f
+  fun {_X _Y} f => A f ∧ B f
 
--- def MorphismProperty.2outOf3 (A : MorphismProperty M) : Prop :=
---   fun X Y f => A f ∧ B f
---   fun X Y f, Y Z g
-
+structure twoOutOfThree {X Y Z : M} (P : MorphismProperty M) where
+  comp {f : X ⟶ Y} {g : Y ⟶ Z} : P f → P g → P (f ≫ g)
+  left {f : X ⟶ Y} {g : Y ⟶ Z} : P g → P (f ≫ g) ⟶ P f
+  right {f : X ⟶ Y} {g : Y ⟶ Z} : P f → P (f ≫ g) → P g
 
 structure ModelCategory (C F W : MorphismProperty M) where
+  p₁ : WeakFactorisationSystem (MorphismProperty.intersection C W) F
 
 
 
 variable {C : Type u} [Category.{u} C] (L R : MorphismProperty C)
 
-variable (X Y : C) (f : X ⟶ Y)
 
-variable (R : MorphismProperty C)
+variable (X Y Z : C) (f : X ⟶ Y) (g : Y ⟶ Z) (hf : R f) (hg : R g)
+
+variable (d : has2outOf3 R)
+
+#check d.prop1
 
 #check R f
 
