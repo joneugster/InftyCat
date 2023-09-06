@@ -7,7 +7,7 @@ import Mathlib.CategoryTheory.LiftingProperties.Adjunction
 import Mathlib.CategoryTheory.MorphismProperty
 import Mathlib.CategoryTheory.EqToHom
 
-import InftyCat.LiftingProperty
+import InftyCat.LiftingProperty.Basic
 
 namespace CategoryTheory
 

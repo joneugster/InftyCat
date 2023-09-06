@@ -50,3 +50,5 @@ def comp {F : Chain C α} (G : compDiag F) :
   sorry
 
 -- TODO: continue skeleton here.
+
+#check Nonempty
