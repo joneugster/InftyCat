@@ -28,9 +28,8 @@ class CategoryTheory.Limits.HasStronglyDirectedColimitsOfSize
   (κ : Cardinal.{v})
   : Prop where
   has_strongly_directed_colimits :
-    ∀ (I : Type w) [PartialOrder I],
-      PartialOrder.stronglyDirected I κ →
-        CategoryTheory.Limits.HasColimitsOfShape I C
+    ∀ (I : Type w) [PartialOrder I] [PartialOrder.IsStronglyDirected I κ],
+      CategoryTheory.Limits.HasColimitsOfShape I C
 
 structure IsSmall (x : C) (κ : Cardinal.{v})
   [CategoryTheory.Limits.HasStronglyDirectedColimitsOfSize (C := C) κ] where
