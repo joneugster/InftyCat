@@ -5,7 +5,7 @@ import Mathlib.AlgebraicTopology.SimplexCategory
 import Mathlib.CategoryTheory.LiftingProperties.Basic
 import Mathlib
 
-import InftyCat.LiftingProperty
+import InftyCat.LiftingProperty.Basic
 
 open CategoryTheory
 
@@ -67,6 +67,16 @@ structure ModelCategory (C F W : MorphismProperty M) where
   p₂ : WeakFactorisationSystem C (MorphismProperty.intersection F W)
   p₃ : twoOutOfThree W
 
+
+-- TODO
+-- /-- We can skip checking the condition C ∩ W ⊆ AC. Compare Hirschhorn, Theorem 11.3.1. -/
+-- -- TODO: we can also omit "AC ⊆ C" because it follows from AF ⊆ F, right?
+-- lemma is_model_category.mk' {W C AF AC F : morphism_class M}
+--   (weq : is_weak_equivalences W)
+--   (caf : is_wfs C AF) (acf : is_wfs AC F)
+--   (hAF : AF = F ∩ W) (hAC : AC ⊆ W) :
+--   is_model_category W C F := sorry
+
 /-
 
 M1-4 of Quillen
@@ -93,3 +103,5 @@ variable (d : has2outOf3 R)
 
 
 #check WeakFactorisationSystem.facObj
+
+
