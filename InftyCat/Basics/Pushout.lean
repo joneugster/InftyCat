@@ -8,25 +8,24 @@ namespace CategoryTheory
 
 #check IsPushout
 
+#check Functor
+
 universe u
 
 variable {C : Type u} [Category C]
 
+variable {Z X Y P Q : C} {f : Z ⟶ X} {g : Z ⟶ Y} {inl : X ⟶ P} {inr : Y ⟶ P}
+variable (p : IsPushout f g inl inr)
 
+-- def IsPushout.cocone : Limits.Cocone (Limits.span f g) := sorry
 
-example {Z X Y P Q : C} {f : Z ⟶ X} {g : Z ⟶ Y} {inl : X ⟶ P} {inr : Y ⟶ P}
-    {a : X ⟶ Q} {b : Y ⟶ Q}
-    (p : IsPushout f g inl inr) (sq : CommSq f g a b) :
+example {Q : C} {a : X ⟶ Q} {b : Y ⟶ Q} (sq : CommSq f g a b) :
     ∃ h : P ⟶ Q, inl ≫ h = a ∧ inr ≫ h = b := by
-  rcases p with ⟨sq₂, ⟨p, p_prop, p_uniq⟩⟩
-  have s : Limits.Cocone (Limits.span f g) := ⟨P, {
-    app := fun e => by
-      simp?
-
-      done
-    naturality := _
-  }⟩
-  sorry
-
-  -- let c : Limits.Cocone (Limits.span f g) := sorry
-  -- have := p.some.desc c
+  rcases p with ⟨sq₂, ⟨p, p_fac, _⟩⟩
+  let h := p sq.cocone
+  change P ⟶ Q at h
+  let h_fac := p_fac sq.cocone
+  use h
+  constructor
+  · exact h_fac .left
+  · exact h_fac .right

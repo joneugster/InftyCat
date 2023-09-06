@@ -42,3 +42,5 @@ structure comp (c : transfiniteChain C α) (d : transfiniteChain C (α + 1)) : P
   -- colimCone: ColimitingCocone d
 
 -- TODO: continue skeleton here.
+
+#check Nonempty
