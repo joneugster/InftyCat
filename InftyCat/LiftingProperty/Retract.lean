@@ -12,21 +12,71 @@ variable {C : Type*} [Category C]
 
 #check IsSplitMono
 
-def retract (x y : C) : Prop := ∃ (i : x ⟶ y), IsSplitMono i
+/-- `x` is a retract of `y` x ⟶ y ⟶ x = id_x -/
+def IsRetractOf (x y : C) : Prop := ∃ (i : x ⟶ y), IsSplitMono i
 
 -- TODO: Does it make sense to work in the Arrow category?
-def retractMorphism' (f g : Arrow C) : Prop := retract f g
+def retractMorphism' (f g : Arrow C) : Prop := IsRetractOf f g
 
-def retractMorphism ⦃X Y Z W: C⦄ (f : X ⟶ Y) (g : Z ⟶ W) : Prop := retract (Arrow.mk f) (Arrow.mk g)
+def retractMorphism ⦃X Y Z W: C⦄ (f : X ⟶ Y) (g : Z ⟶ W) : Prop := IsRetractOf (Arrow.mk f) (Arrow.mk g)
 
 variable (I : MorphismProperty C)
 
-def IsRetract : MorphismProperty C :=
+
+/--
+ `RetractClass` takes a class of morphisms and returns a class of morphisms which are retracts of morphisms in the original class.
+-/
+def RetractClass : MorphismProperty C :=
   fun _ _ f => ∃ (Z W : C) (g : Z ⟶ W), I g ∧ retractMorphism f g
 
 def StableUnderRetract : Prop :=
-  ∀ ⦃X Y : C⦄ (f : X ⟶ Y), (IsRetract I) f → I f
+  ∀ ⦃X Y : C⦄ (f : X ⟶ Y), (RetractClass I) f → I f
 
-theorem solveMeToo : StableUnderRetract (leftLiftingProperty I) := sorry
+@[aesop forward safe]
+lemma comsq_lemma {W X Y Z : C} (f : W ⟶ X) (g : W ⟶ Y) (h : X ⟶ Z) (i : Y ⟶ Z) (comsq: CommSq f g h i ) : 
+f ≫ h = g ≫ i := comsq.w
 
+
+--@[simp]
+--@[aesop safe]
+lemma comsq_lemma_alt {W X Y Z : C} (f : W ⟶ X) (g : W ⟶ Y) (h : X ⟶ Z) (i : Y ⟶ Z) :(CommSq f g h i ) ↔ (f ≫ h = g ≫ i) := by 
+  constructor
+  · intro commsq
+    exact commsq.w
+    --aesop_cat 
+  · intro w 
+    exact ⟨w⟩
+  
+theorem solveMeToo : StableUnderRetract (leftLiftingProperty I) := 
+by 
+  intro A B f hrIf
+  unfold RetractClass at hrIf
+  rcases hrIf with ⟨C, D, g, hIg, hrg⟩  
+  intro X Y i hIi 
+  have : HasLiftingProperty g i := hIg i hIi
+  rcases hrg with ⟨κ, ρ , hκρ⟩
+  constructor
+  · intro u v huv
+    have horizontal_pasting : (ρ.left ≫ u) ≫ i  = g ≫ (ρ.right ≫ v) := by
+      aesop 
+    have H := HasLiftingProperty.sq_hasLift ⟨horizontal_pasting⟩ 
+    rcases H with ⟨d, hd⟩ 
+    let filler : B ⟶ X := κ.right ≫ d 
+    refine {exists_lift := ?_}
+    refine ⟨filler,?_,?_⟩   
+    · calc 
+        f ≫ filler = f ≫ κ.right ≫ d := by simp [hd]
+        _          = κ.left ≫ g ≫ d := by sorry 
+        _          = κ.left ≫ ρ.left ≫ u  := by simp [hd]
+        _          = u := by  sorry 
+
+    · calc 
+        filler ≫ i = κ.right ≫ d ≫ i  := by simp
+        _          = κ.right ≫ ρ.right ≫ v := by aesop_cat
+        _          = v := by sorry 
+
+
+
+/- similar but use opposite category instead. -/
 theorem solveMeToo' : StableUnderRetract (rightLiftingProperty I) := sorry
+
