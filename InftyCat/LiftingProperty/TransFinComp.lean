@@ -1,32 +1,29 @@
 import InftyCat.LiftingProperty.Basic
 import Mathlib.SetTheory.Ordinal.Basic
 
+import Mathlib.Init.Algebra.Order
+import Mathlib.CategoryTheory.Category.Preorder
+
 namespace CategoryTheory
 
 variable (C : Type u) [Category C]
 
-#synth LinearOrder Ordinal
-#check Ordinal.linearOrder
 
-#synth Category Ordinal
+-- Ordinals are Quotient of Well orders. This picks one and the underlying
+-- category: '(Quotient.out α).α'
 
-variable (α : Ordinal)
-
--- Ordinals are Quotient of Well orders. This picks one and the underlying category:
-#synth Category (Quotient.out α).α
-
-structure Chain where
-  fonc : (Quotient.out α).α ⥤ C
+structure Chain (α : Ordinal.{v}) where
+  fonc : (Quotient.out α).α  ⥤ C
   proof : sorry -- F is cocontinuous / preserves colimits
 
-structure Tower  where
+structure Tower (α : Ordinal.{v})  where
   fonc : ((Quotient.out α).α)ᵒᵖ ⥤ C
   proof : sorry -- F is continuous / preserves limits
 
 
 namespace Chain
 
-variable {C}-- TODO: What's a colimiting cocone
+variable {C}
 
 
 def restr {α β : Ordinal} (h : α ≤ β) (F : Chain C β) : Chain C α :=
@@ -40,15 +37,13 @@ def coconeOfSucc (α : Ordinal) (F : Chain C (α+1)) :
   Limits.Cocone (restr (Ordinal.le_add_right α 1) F).fonc :=
   sorry
 
-structure compDiag (F : Chain C α) where
+structure compDiag {α : Ordinal} (F : Chain C α) where
   diag : Chain C (α+1)
   p : extend (Ordinal.le_add_right α 1) F diag
   ic : Limits.IsColimit (coconeOfSucc α diag)
 
 -- Should be a map from G(0) -> G(alpha)
-def comp {F : Chain C α} (G : compDiag F) :
-  sorry
+def comp {α : Ordinal} {F : Chain C α} (G : compDiag F) : Prop :=
+  False
 
 -- TODO: continue skeleton here.
-
-#check Nonempty
