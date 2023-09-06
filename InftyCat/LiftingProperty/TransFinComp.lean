@@ -12,69 +12,120 @@ open Limits
 variable (C : Type u) [Category C]
 
 
-variable (o : Ordinal.{v})
-#check (Quotient.out o).α
+
+-- Unbundled version of WellOrder, with a successor function
+class WellOrderSucc (α : Type v) extends LinearOrder α, SuccOrder α :=
+  wo : IsWellOrder α (· < ·)
+
+
+def WellOrderSucc.bundle (α : Type v) [h : WellOrderSucc α]
+  : WellOrder.{v} where
+  α := α
+  r := (· < · )
+  wo := h.wo
 
 
 
--- Ordinals are Quotient of Well orders. This picks one and the underlying
--- category: '(Quotient.out α).α'
 
--- def Ordinal.toType (α : Ordinal.{v}) : Type (v + 1) :=
---   {β : Ordinal.{v} // β < α}
+def WellOrderSucc.zero (α : Type v) [WellOrderSucc α]
+  (ne : Nonempty α) : α :=
+  sorry
 
-def Ordinal.toType : Type (v+1) := FullSubcategory (· < o)
+def WellOrderSucc.zero (α : Type v) [WellOrderSucc α]
+  (ne : Nonempty α) : α :=
+  sorry
 
--- example (α β : Ordinal.{v}) (h : α < β) := sorry
+def WellOrderSucc.initial (α : Type v) [WellOrderSucc α] (β : α) :=
+  {γ : α // γ < β}
 
--- #check ordinalAsCategory o
-
-instance : Coe Ordinal.{v} (Type (v+1)) := ⟨ fun α => Ordinal.toType α ⟩
-
---#check InducedCategory (Ordinal.{v}) (fun (β : Ordinal.toType o) => (β : Type (u+1)))
-
-#check Ordinal.toType
-
-class WellFoundedOrder (α : Type v) extends LinearOrder α, IsWellFounded α (· ≤ ·) where
+-- We still have a well founded order by restricting it
+instance WellOrderSucc.ofInitial (α : Type v) [WellOrderSucc α] (β : α)
+  : WellOrderSucc (WellOrderSucc.initial α β) :=
+  sorry
 
 --instance : Preorder (Ordinal.toType α) := _
 
-structure Chain (α : Type v) [WellFoundedOrder α] where
-  F : α ⥤ C
-  proof : PreservesColimits F
+structure Chain (α : Type v) [WellOrderSucc α] where
+  diag: α ⥤ C
+  c : PreservesColimits diag
+  ne : Nonempty α
 
-structure Tower (α : Type v) [WellFoundedOrder α] where
-  F : αᵒᵖ ⥤ C
-  proof : PreservesLimits F
+structure Tower (α : Type v) [WellOrderSucc α] where
+  diag : αᵒᵖ ⥤ C
+  c : PreservesLimits diag
+  ne : Nonempty α
 
 
 namespace Chain
 
 variable {C}
+variable {α : Type v} [αwos : WellOrderSucc α]
 
-def funcOrdCat {α β : Ordinal} (h : α ≤ β) :
-  ((Quotient.out α).α) ⥤ (Quotient.out β).α :=
+-- dual should be Tower.target
+def source (F : Chain C α) : C :=
+  F.diag.obj (WellOrderSucc.zero α F.ne)
+
+
+def atomicMap (F : Chain C α) (β : α)
+  : F.diag.obj β ⟶ F.diag.obj (αwos.succ β) :=
+  F.diag.map (homOfLE (αwos.le_succ β))
+
+-- true iff every "atomic" map in F is in I
+def generated_from (F : Chain C α) (I : MorphismProperty C) : Prop :=
+  ∀ (β : α), (¬IsMax β) → I (atomicMap F β)
+
+
+structure atomicCocone (F : Chain C α) (x : C) :=
+  ι : ∀ (β : α), (F.diag.obj β) ⟶ x
+  w : ∀ (β : α), ι β = (atomicMap F β) ≫ ι (αwos.succ β)
+
+def getCocone {F : Chain C α} {x : C} (ac : atomicCocone F x)
+  : Limits.Cocone F.diag where
+    pt := x
+    ι := {
+      app := ac.ι
+      naturality := sorry
+    }
+
+
+structure compDiag (F : Chain C α) where
+  c : Limits.Cocone F.diag
+  ic : Limits.IsColimit c
+
+-- The transfinite composition map given by a 'Chain.compDiag'
+def comp {F : Chain C α} (G : compDiag F) : F.source ⟶ G.c.pt  :=
+  G.c.ι.app (WellOrderSucc.zero α F.ne)
+
+
+end Chain
+
+
+namespace MorphismProperty
+
+variable {C : Type u} [Category C]
+
+-- Maybe change the universe level, TODO later
+def StableUnderChainComposition (I : MorphismProperty C) : Prop :=
+  ∀ (α : Type u) [WellOrderSucc α],
+  ∀ (F : Chain C α),
+    Chain.generated_from F I → ∀ (G : Chain.compDiag F), I (Chain.comp G)
+
+
+#check Ordinal.inductionOn
+
+theorem llp_chain_comp_stability (I : MorphismProperty C) :
+  StableUnderChainComposition (leftLiftingProperty I) := by
+  intro α αwos F hI G
+  intro x y i hiI
+  constructor
+  intro v w sq
+  constructor
+  constructor
+  -- ICI: commence la récurrence: on relève un par un les carrés
+  -- Pour cela, le but est de construire un atomicCocone vers x,
+  -- en construisant cette donnée par principe de récurrence
+  -- (on peut sûrement même utiliser le principe de récurrence bien fondé)
   sorry
 
-
-def restr {α β : Ordinal} (h : α ≤ β) (F : Chain C β) : Chain C α :=
-  sorry
-
-def extend {α β : Ordinal} (h : α ≤ β) (F : Chain C α) (G : Chain C β) : Prop :=
-  F = (restr h G)
-
-
-def coconeOfSucc (α : Ordinal) (F : Chain C (α+1)) :
-  Limits.Cocone (restr (Ordinal.le_add_right α 1) F).fonc :=
-  sorry
-
-structure compDiag {α : Ordinal} (F : Chain C α) where
-  diag : Chain C (α+1)
-  p : extend (Ordinal.le_add_right α 1) F diag
-  ic : Limits.IsColimit (coconeOfSucc α diag)
-
--- Should be a map from G(0) -> G(alpha)
-def comp {α : Ordinal} {F : Chain C α} (G : compDiag F) : Prop :=
-  False
 
 -- TODO: continue skeleton here.

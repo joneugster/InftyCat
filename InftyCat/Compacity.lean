@@ -63,8 +63,8 @@ def Limits.Cocone.mapColimHom
   (ihc : Limits.IsColimit hc)
   (a: hc.pt)
   :  x ⟶ c.pt  :=
-  -- Limits.Cocone.eval c (F ⋙ coyoneda.obj (Opposite.op x))
-  sorry -- TODO
+  -- TODO: use Limits.Cocone.eval c (F ⋙ coyoneda.obj (Opposite.op x))
+  sorry
 
 
 -- It is important to make use of universes u v w when using this class
