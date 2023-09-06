@@ -38,8 +38,6 @@ class Limits.HasStronglyDirectedColimitsOfSize
 
 /- Did not find this construction in Mathlib..., it is whiskering, but not
    in the same direction as 'Cocone.whisker' -/
-
--- MAY NOT BE NEEDED AFTER ALL, BUT KEEP IT JUST IN CASE
 def Limits.Cocone.eval
   {I : Type*} [Category I]
   {C : Type*} [Category C]
@@ -53,25 +51,23 @@ def Limits.Cocone.eval
     ι := (c.ι ◫ (NatTrans.id G)) ≫ (Functor.constComp I c.pt G).hom
   }
 
---
 
 
-
-def Limits.mapColimHomToHomColim
+def Limits.Cocone.mapColimHom
   {I : Type*} [Category I]
   {C : Type*} [Category C]
   {F : I ⥤ C}
   (x : C)
-  {c : Limits.Cocone F}
+  (c : Limits.Cocone F)
   {hc : Limits.Cocone (F ⋙ coyoneda.obj (Opposite.op x))}
-  (ic : Limits.IsColimit c)
   (ihc : Limits.IsColimit hc)
   (a: hc.pt)
   :  x ⟶ c.pt  :=
+  -- Limits.Cocone.eval c (F ⋙ coyoneda.obj (Opposite.op x))
   sorry -- TODO
 
 
--- It is important to make use of universes u v w
+-- It is important to make use of universes u v w when using this class
 class IsCompact
   {C : Type u} [Category C]
   (x : C)
@@ -82,6 +78,6 @@ class IsCompact
       ∀ (F : I ⥤ C),
       ∀ (c : Limits.Cocone F),
       ∀ (hc : Limits.Cocone (F ⋙ coyoneda.obj (Opposite.op x))),
-      ∀ (ic : Limits.IsColimit c),
       ∀ (ihc : Limits.IsColimit hc),
-        Function.Bijective (Limits.mapColimHomToHomColim x ic ihc)
+        Limits.IsColimit c →
+          Function.Bijective (Limits.Cocone.mapColimHom x c ihc)

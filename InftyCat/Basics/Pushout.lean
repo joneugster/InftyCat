@@ -8,25 +8,47 @@ namespace CategoryTheory
 
 #check IsPushout
 
+#check Functor
+
 universe u
 
 variable {C : Type u} [Category C]
 
+variable {Z X Y P Q : C} {f : Z ⟶ X} {g : Z ⟶ Y} {inl : X ⟶ P} {inr : Y ⟶ P}
+variable (p : IsPushout f g inl inr)
 
 
-example {Z X Y P Q : C} {f : Z ⟶ X} {g : Z ⟶ Y} {inl : X ⟶ P} {inr : Y ⟶ P}
-    {a : X ⟶ Q} {b : Y ⟶ Q}
-    (p : IsPushout f g inl inr) (sq : CommSq f g a b) :
+variable {Q : C} {a : X ⟶ Q} {b : Y ⟶ Q} (sq : CommSq f g a b)
+
+/-- This is the map coming from the universal property of the pushout. -/
+noncomputable
+def IsPushout.mapOfCommSq : P ⟶ Q :=
+  (Classical.choice (p.isColimit')).desc sq.cocone
+
+/-- The proof that `inl ≫ IsPushout.mapOfCommSq p sq = a`. -/
+noncomputable
+def IsPushout.mapOfCommSq_commutes₁ : inl ≫ IsPushout.mapOfCommSq p sq = a :=
+  (Classical.choice (p.isColimit')).fac sq.cocone .left
+
+/-- The proof that `inr ≫ IsPushout.mapOfCommSq p sq = b`. -/
+noncomputable
+def IsPushout.mapOfCommSq_commutes₂ :  inr ≫ IsPushout.mapOfCommSq p sq = b :=
+  (Classical.choice (p.isColimit')).fac sq.cocone .right
+
+#check p.mapOfCommSq_commutes₁ sq
+
+noncomputable
+def IsPushout.mapOfCommSqUniq := (Classical.choice (p.isColimit')).uniq sq.cocone
+
+
+example {Q : C} {a : X ⟶ Q} {b : Y ⟶ Q} (sq : CommSq f g a b) :
     ∃ h : P ⟶ Q, inl ≫ h = a ∧ inr ≫ h = b := by
-  rcases p with ⟨sq₂, ⟨p, p_prop, p_uniq⟩⟩
-  have s : Limits.Cocone (Limits.span f g) := ⟨P, {
-    app := fun e => by
-      simp?
-
-      done
-    naturality := _
-  }⟩
-  sorry
-
-  -- let c : Limits.Cocone (Limits.span f g) := sorry
-  -- have := p.some.desc c
+  use p.mapOfCommSq sq
+  -- rcases p with ⟨sq₂, ⟨p, p_fac, _⟩⟩
+  -- let h := p sq.cocone
+  -- change P ⟶ Q at h
+  -- let h_fac := p_fac sq.cocone
+  -- use h
+  constructor
+  · exact p.mapOfCommSq_commutes₁ sq
+  · exact p.mapOfCommSq_commutes₂ sq
