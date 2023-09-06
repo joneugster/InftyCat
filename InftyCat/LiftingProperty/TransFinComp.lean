@@ -12,8 +12,16 @@ variable (C : Type u) [Category C]
 -- Ordinals are Quotient of Well orders. This picks one and the underlying
 -- category: '(Quotient.out α).α'
 
+def Ordinal.toType (α : Ordinal.{v}) :=
+  { β : Ordinal.{v} // β < α}
+
+#check Ordinal.toType
+
+instance : Coe Ordinal.{v} (Type (v+1)) := ⟨ fun α => α.toType ⟩
+
+
 structure Chain (α : Ordinal.{v}) where
-  fonc : (Quotient.out α).α  ⥤ C
+  fonc : { β : Ordinal.{v} // β < α}  ⥤ C
   proof : sorry -- F is cocontinuous / preserves colimits
 
 structure Tower (α : Ordinal.{v})  where
@@ -24,6 +32,10 @@ structure Tower (α : Ordinal.{v})  where
 namespace Chain
 
 variable {C}
+
+def funcOrdCat {α β : Ordinal} (h : α ≤ β) :
+  ((Quotient.out α).α) ⥤ (Quotient.out β).α :=
+  sorry
 
 
 def restr {α β : Ordinal} (h : α ≤ β) (F : Chain C β) : Chain C α :=
