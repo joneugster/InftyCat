@@ -47,7 +47,7 @@ lemma comsq_lemma_alt {W X Y Z : C} (f : W ⟶ X) (g : W ⟶ Y) (h : X ⟶ Z) (i
   · intro w 
     exact ⟨w⟩
   
-theorem solveMeToo : StableUnderRetract (leftLiftingProperty I) := 
+theorem retract_stable_of_left_class : StableUnderRetract (leftLiftingProperty I) := 
 by 
   intro A B f hrIf
   unfold RetractClass at hrIf
@@ -55,28 +55,33 @@ by
   intro X Y i hIi 
   have : HasLiftingProperty g i := hIg i hIi
   rcases hrg with ⟨κ, ρ , hκρ⟩
+  injection hκρ with hκρ₁ hκρ₂
   constructor
   · intro u v huv
+    
     have horizontal_pasting : (ρ.left ≫ u) ≫ i  = g ≫ (ρ.right ≫ v) := by
       aesop 
     have H := HasLiftingProperty.sq_hasLift ⟨horizontal_pasting⟩ 
     rcases H with ⟨d, hd⟩ 
     let filler : B ⟶ X := κ.right ≫ d 
     refine {exists_lift := ?_}
-    refine ⟨filler,?_,?_⟩   
+    refine ⟨filler, ?_, ?_⟩   
+    --let that: κ.right ≫ ρ.right = 𝟙 := by ext; 
     · calc 
         f ≫ filler = f ≫ κ.right ≫ d := by simp [hd]
-        _          = κ.left ≫ g ≫ d := by sorry 
+        _          = κ.left ≫ g ≫ d := by simp [κ.w]  
         _          = κ.left ≫ ρ.left ≫ u  := by simp [hd]
-        _          = u := by  sorry 
-
+        _          = u    := (reassoc_of% hκρ₁) u
     · calc 
         filler ≫ i = κ.right ≫ d ≫ i  := by simp
         _          = κ.right ≫ ρ.right ≫ v := by aesop_cat
-        _          = v := by sorry 
+        _          = v := (reassoc_of% hκρ₂) v
+
 
 
 
 /- similar but use opposite category instead. -/
 theorem solveMeToo' : StableUnderRetract (rightLiftingProperty I) := sorry
 
+end MorphismProperty
+end CategoryTheory
