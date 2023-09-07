@@ -21,6 +21,11 @@ variable (C : Type u) [Category C]
 class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
   wo : IsWellOrder α (· < ·)
 
+theorem inf_exists {α : Type v} [WellOrderUnbundled α] (p : α → Prop)
+  (h : ∃ (β : α), p β) :
+  ∃ (μ : α), p μ ∧ ∀ (β : α), p β → μ ≤ β :=
+  sorry
+
 instance {α : Type v} [WellOrderUnbundled α] : SuccOrder α where
   succ := fun x => x -- x + 1 --TODO
   le_succ := sorry
