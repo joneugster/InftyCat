@@ -1,4 +1,6 @@
 import InftyCat.LiftingProperty.Basic
+import InftyCat.LiftingProperty.WellOrderUnbundled
+
 import Mathlib.SetTheory.Ordinal.Basic
 import Mathlib.CategoryTheory.Limits.Preserves.Basic
 
@@ -15,75 +17,7 @@ universe u v
 
 variable (C : Type u) [Category C]
 
-#check IsWellOrder
 
-/-- Unbundled version of WellOrder, with a successor function -/
-class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
-  wo : IsWellOrder α (· < ·)
-
-
-noncomputable def inf
-  {α : Type v} [WellOrderUnbundled α]
-  (p : α → Prop)
-  (h : ∃ (β : α), p β)
-  : α
-
-theorem inf_is_min
-  {α : Type v} [WellOrderUnbundled α]
-  (p : α → Prop)
-  (h : ∃ (β : α), p β) :
-  p (inf p h ) ∧ ∀ (β : α), p β → μ ≤ β :=
-  sorry
-
-noncomputable
-instance SuccOrder.ofWellOrder
-  {α : Type v} [h : WellOrderUnbundled α]
-  [DecidablePred (@IsMax α _)]
-  : SuccOrder α where
-  succ :=
-    fun x =>
-      if im: IsMax x
-      then
-        x
-      else
-        inf (x < ·) (by exact Iff.mp not_isMax_iff im)
-  le_succ := sorry
-  max_of_succ_le := sorry
-  succ_le_of_lt := sorry
-  le_of_lt_succ := sorry
-
--- #check WellOrder
--- def WellOrderUnbundled.bundle (α : Type v) [h : WellOrderUnbundled α]
---   : WellOrder.{v} where
---   α := α
---   r := (· < · )
---   wo := h.wo
-
--- -- structure WellOrder : Type (u + 1) where
--- --   /-- The underlying type of the order. -/
--- --   α : Type u
--- --   /-- The underlying relation of the order. -/
--- --   r : α → α → Prop
--- --   /-- The proposition that `r` is a well-ordering for `α`. -/
--- --   wo : IsWellOrder α r
-
-variable  (α : Type v) [h : WellOrderUnbundled α]
-#check WellOrder.mk α (· < · ) h.wo
-
-instance (α : Type v) [WellOrderUnbundled α] : Zero α where
-  zero := _
-
-instance (α : Type v) [WellOrderUnbundled α] : Bot α where
-  bot := 0
-
--- unused?
-def WellOrderUnbundled.initial (α : Type v) [WellOrderUnbundled α] (β : α) :=
-  {γ : α // γ < β}
-
--- We still have a well founded order by restricting it
-instance WellOrderUnbundled.ofInitial (α : Type v) [WellOrderUnbundled α] (β : α)
-  : WellOrderUnbundled (WellOrderUnbundled.initial α β) :=
-  sorry
 
 --instance : Preorder (Ordinal.toType α) := _
 
