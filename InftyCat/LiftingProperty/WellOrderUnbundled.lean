@@ -50,9 +50,7 @@ lemma succMap_le_of_lt {β γ : α} (h : ¬IsMax β) (hc: β < γ)
   have t := inf_is_le (β < ·) (Iff.mp not_isMax_iff h)
   specialize t γ
   specialize t hc
-  
-  sorry
-
+  exact t
 
 
 end WellOrderUnbundled
@@ -66,18 +64,18 @@ variable {α : Type v} [hwos : WellOrderUnbundled α] [NoMaxOrder α]
 
 noncomputable
 instance SuccOrder.ofWellOrder : SuccOrder α where
-  succ β := WellOrderUnbundled.succMap β (not_isMax β) 
+  succ β := succMap β (not_isMax β) 
   le_succ := by
     intro β
     dsimp only
-    have t : β < WellOrderUnbundled.succMap β (not_isMax β) :=
-      WellOrderUnbundled.succMap_lt β (not_isMax β)
+    have t : β < succMap β (not_isMax β) :=
+      succMap_lt β (not_isMax β)
     exact LT.lt.le t
   max_of_succ_le := by
     intro β
     simp only [not_isMax]
-    have t : β < WellOrderUnbundled.succMap β (not_isMax β) :=
-      WellOrderUnbundled.succMap_lt β (not_isMax β)
+    have t : β < succMap β (not_isMax β) :=
+      succMap_lt β (not_isMax β)
     intro h
     have s : β < β := lt_of_lt_of_le t h
     apply lt_irrefl β
@@ -85,8 +83,12 @@ instance SuccOrder.ofWellOrder : SuccOrder α where
   succ_le_of_lt := by
     intro β γ
     simp only [not_isMax]
-
-  le_of_lt_succ := sorry
+    intro h
+    exact succMap_le_of_lt (not_isMax β) h
+  le_of_lt_succ := by
+    intro β γ h
+    have s := succMap_le_of_lt (not_isMax β) h
+    
 
 -- #check WellOrder
 -- def WellOrderUnbundled.bundle (α : Type v) [h : WellOrderUnbundled α]
