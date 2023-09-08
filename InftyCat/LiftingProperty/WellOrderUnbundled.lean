@@ -11,27 +11,53 @@ class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
 
 
 
+
 namespace WellOrderUnbundled
 
+
+#check WellFounded.induction
+
+theorem inf_exists
+  {α : Type v} [iwo : WellOrderUnbundled α]
+  (p : α → Prop)
+  (h : ∃ β, p β)
+  : ∃ μ, p μ ∧ ∀ β, p β → μ ≤ β := by
+  have he : α → Prop :=
+    fun β => ∃ γ ≤ β, p γ
+  have hc : Prop :=
+    ∃ μ, p μ ∧ ∀ γ, p γ → μ ≤ γ
+  have rs : ∀ β, (∀ γ, (γ < β → he γ → hc)) → (he β → hc) := by
+    intro β hr t
+    sorry
+  rcases h with ⟨β, hβ⟩
+  have test := WellFounded.induction iwo.wo.wf β rs
+  have q : he β := by
+    sorry -- Il suffit de pouvoir lire à travers rh..., car p β
+  have i : hc := test q
+  -- hc est EXACTEMENT notre conclusion...
+  sorry
+
+
+-- Take the element whose existence is guaranteed by inf_exists
 noncomputable def inf
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
-  (h : ∃ (β : α), p β)
+  (h : ∃ β, p β)
   : α :=
   sorry
 
 lemma inf_is_in
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
-  (h : ∃ (β : α), p β) :
+  (h : ∃ β, p β) :
   p (inf p h) := by
   sorry
 
 lemma inf_is_le
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
-  (h : ∃ (β : α), p β) :
-  ∀ (β : α), p β → (inf p h) ≤ β := by
+  (h : ∃ β, p β) :
+  ∀ β, p β → (inf p h) ≤ β := by
   sorry
 
 -- p (inf p h ) ∧ ∀ (β : α), p β → μ ≤ β
@@ -87,32 +113,36 @@ instance SuccOrder.ofWellOrder : SuccOrder α where
     exact succMap_le_of_lt (not_isMax β) h
   le_of_lt_succ := by
     intro β γ h
-    have s := succMap_le_of_lt (not_isMax β) h
+    by_contra ha
+    have h₁ : β < succMap β (not_isMax β) :=
+      succMap_lt β (not_isMax β)
+    have h₂ :=
+      le_trans
+        (succMap_le_of_lt (not_isMax β) h)
+        (succMap_le_of_lt (not_isMax γ) (lt_of_not_le ha))
+    exact LT.lt.false (lt_of_lt_of_le h₁ h₂)
     
 
 -- #check WellOrder
--- def WellOrderUnbundled.bundle (α : Type v) [h : WellOrderUnbundled α]
---   : WellOrder.{v} where
---   α := α
---   r := (· < · )
---   wo := h.wo
-
--- -- structure WellOrder : Type (u + 1) where
--- --   /-- The underlying type of the order. -/
--- --   α : Type u
--- --   /-- The underlying relation of the order. -/
--- --   r : α → α → Prop
--- --   /-- The proposition that `r` is a well-ordering for `α`. -/
--- --   wo : IsWellOrder α r
 
 variable  (α : Type v) [h : WellOrderUnbundled α]
 #check WellOrder.mk α (· < · ) h.wo
 
-instance (α : Type v) [WellOrderUnbundled α] : Zero α where
-  zero := _
+noncomputable instance
+  (α : Type v) [WellOrderUnbundled α] [ne : Nonempty α]
+  : Zero α where
+  zero := inf (fun _ => True) (by use ne.some)
 
-instance (α : Type v) [WellOrderUnbundled α] : Bot α where
+noncomputable instance
+  (α : Type v) [WellOrderUnbundled α] [Nonempty α]
+  : OrderBot α where
   bot := 0
+  bot_le := by
+    intro β
+    dsimp only
+    have h := inf_is_le (fun _ => True) (by use β) β
+    apply h
+    exact trivial
 
 -- unused?
 def WellOrderUnbundled.initial (α : Type v) [WellOrderUnbundled α] (β : α) :=
