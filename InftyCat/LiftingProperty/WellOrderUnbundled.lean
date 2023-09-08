@@ -11,7 +11,6 @@ class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
 
 
 
-
 namespace WellOrderUnbundled
 
 
@@ -22,20 +21,39 @@ theorem inf_exists
   (p : α → Prop)
   (h : ∃ β, p β)
   : ∃ μ, p μ ∧ ∀ β, p β → μ ≤ β := by
-  have he : α → Prop :=
-    fun β => ∃ γ ≤ β, p γ
-  have hc : Prop :=
-    ∃ μ, p μ ∧ ∀ γ, p γ → μ ≤ γ
-  have rs : ∀ β, (∀ γ, (γ < β → he γ → hc)) → (he β → hc) := by
+  let hc : Prop :=
+    ∃ μ, p μ ∧ ∀ β, p β → μ ≤ β
+  have rs
+  : ∀ β, (∀ γ, (γ < β → (∃ μ ≤ γ, p μ) → hc)) → ((∃ μ ≤ β, p μ) → hc) := by
     intro β hr t
-    sorry
+    show ∃ μ, p μ ∧ ∀ β, p β → μ ≤ β
+    by_cases hmax : ∀ μ < β, ¬p μ
+    · use β
+      constructor
+      · rcases t with ⟨μ, ⟨hμ, hpμ⟩⟩
+        have heq : β = μ := by
+          by_contra habs
+          specialize hmax μ
+          have _ := hmax (Ne.lt_of_le' habs hμ)
+          contradiction
+        rw [heq]
+        trivial
+      · intro γ hγ
+        by_contra habs
+        rw [@not_le] at habs
+        specialize hmax γ
+        have _ := hmax habs
+        contradiction
+    · push_neg at hmax
+      rcases hmax with ⟨γ, ⟨hγ, hpγ⟩⟩
+      have hs : ∃ μ ≤ γ, p μ := by use γ
+      specialize hr γ hγ hs
+      trivial
   rcases h with ⟨β, hβ⟩
   have test := WellFounded.induction iwo.wo.wf β rs
-  have q : he β := by
-    sorry -- Il suffit de pouvoir lire à travers rh..., car p β
-  have i : hc := test q
-  -- hc est EXACTEMENT notre conclusion...
-  sorry
+  have q : ∃ μ ≤ β, p μ := by use β
+  show hc
+  exact test q
 
 
 -- Take the element whose existence is guaranteed by inf_exists
