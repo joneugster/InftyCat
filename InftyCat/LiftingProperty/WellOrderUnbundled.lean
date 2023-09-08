@@ -54,27 +54,46 @@ theorem inf_exists
   exact test q
 
 
+
+
 -- Take the element whose existence is guaranteed by inf_exists
 noncomputable def inf
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
   (h : ∃ β, p β)
   : α :=
-  Classical.choice (nonempty_of_exists (inf_exists p h))
+  have hq : ∃ (_ : {μ // p μ ∧ ∀ β, p β → μ ≤ β}), True := by
+    rcases (inf_exists p h) with ⟨β, hβ⟩
+    use ⟨β, hβ⟩
+  (Classical.choice (nonempty_of_exists hq)).val
+
+lemma inf_is_inf
+  {α : Type v} [WellOrderUnbundled α]
+  (p : α → Prop)
+  (h : ∃ β, p β) :
+  p (inf p h) ∧ ∀ β, p β → (inf p h) ≤ β := by
+    unfold inf
+    have hq : ∃ (_ : {μ // p μ ∧ ∀ β, p β → μ ≤ β}), True := by
+      rcases (inf_exists p h) with ⟨β, hβ⟩
+      use ⟨β, hβ⟩
+    exact (Classical.choice (nonempty_of_exists hq)).property
 
 lemma inf_is_in
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
   (h : ∃ β, p β) :
   p (inf p h) := by
-    sorry
+    rcases (inf_is_inf p h) with ⟨q, _⟩
+    exact q
+
 
 lemma inf_is_le
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
   (h : ∃ β, p β) :
   ∀ β, p β → (inf p h) ≤ β := by
-  sorry
+    rcases (inf_is_inf p h) with ⟨_, q⟩
+    exact q
 
 -- p (inf p h ) ∧ ∀ (β : α), p β → μ ≤ β
 
@@ -92,6 +111,26 @@ lemma succMap_le_of_lt {β γ : α} (h : ¬IsMax β) (hc: β < γ)
   have t := inf_is_le (β < ·) (Iff.mp not_isMax_iff h)
   specialize t γ hc
   exact t
+
+
+
+noncomputable instance
+  (α : Type v) [WellOrderUnbundled α] [ne : Nonempty α]
+  : Zero α where
+  zero := inf (fun _ => True) (by use ne.some)
+
+noncomputable instance
+  (α : Type v) [WellOrderUnbundled α] [Nonempty α]
+  : OrderBot α where
+  bot := 0
+  bot_le := by
+    intro β
+    dsimp only
+    have h := inf_is_le (fun _ => True) (by use β) β
+    apply h
+    exact trivial
+
+
 
 
 end WellOrderUnbundled
@@ -136,34 +175,4 @@ instance SuccOrder.ofWellOrder : SuccOrder α where
         (succMap_le_of_lt (not_isMax β) h)
         (succMap_le_of_lt (not_isMax γ) (lt_of_not_le ha))
     exact LT.lt.false (lt_of_lt_of_le h₁ h₂)
-    
 
--- #check WellOrder
-
-variable  (α : Type v) [h : WellOrderUnbundled α]
-#check WellOrder.mk α (· < · ) h.wo
-
-noncomputable instance
-  (α : Type v) [WellOrderUnbundled α] [ne : Nonempty α]
-  : Zero α where
-  zero := inf (fun _ => True) (by use ne.some)
-
-noncomputable instance
-  (α : Type v) [WellOrderUnbundled α] [Nonempty α]
-  : OrderBot α where
-  bot := 0
-  bot_le := by
-    intro β
-    dsimp only
-    have h := inf_is_le (fun _ => True) (by use β) β
-    apply h
-    exact trivial
-
--- unused?
-def WellOrderUnbundled.initial (α : Type v) [WellOrderUnbundled α] (β : α) :=
-  {γ : α // γ < β}
-
--- We still have a well founded order by restricting it
-instance WellOrderUnbundled.ofInitial (α : Type v) [WellOrderUnbundled α] (β : α)
-  : WellOrderUnbundled (WellOrderUnbundled.initial α β) :=
-  sorry
