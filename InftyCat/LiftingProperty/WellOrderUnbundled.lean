@@ -14,8 +14,6 @@ class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
 namespace WellOrderUnbundled
 
 
-#check WellFounded.induction
-
 theorem inf_exists
   {α : Type v} [iwo : WellOrderUnbundled α]
   (p : α → Prop)
@@ -62,14 +60,14 @@ noncomputable def inf
   (p : α → Prop)
   (h : ∃ β, p β)
   : α :=
-  sorry
+  Classical.choice (nonempty_of_exists (inf_exists p h))
 
 lemma inf_is_in
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
   (h : ∃ β, p β) :
   p (inf p h) := by
-  sorry
+    sorry
 
 lemma inf_is_le
   {α : Type v} [WellOrderUnbundled α]
@@ -92,8 +90,7 @@ lemma succMap_lt (β : α) (h : ¬IsMax β) : β < succMap β h :=
 lemma succMap_le_of_lt {β γ : α} (h : ¬IsMax β) (hc: β < γ)
   : succMap β h ≤ γ := by
   have t := inf_is_le (β < ·) (Iff.mp not_isMax_iff h)
-  specialize t γ
-  specialize t hc
+  specialize t γ hc
   exact t
 
 
