@@ -238,3 +238,20 @@ theorem induction [Nonempty α] [NoMaxOrder α]
         assumption
       contradiction
 
+
+
+/- This will enable us to construct mathematical objects by
+   ordinal recursion -/
+
+theorem fix_exists [Nonempty α] [NoMaxOrder α]
+  {C : α → Sort*}
+  (B : C 0)
+  (S : (β : α) → C β → C (succ β))
+  (L : (β : α) → is_limit β → ((γ : α) → γ < β → C γ) → C β)
+  : ∃ F : (β : α) → C β,
+    F 0 = B ∧
+    (∀ γ, F (succ γ) = S γ (F γ)) ∧
+    (∀ γ, ∀ (h : is_limit γ), F γ = L γ h (fun δ _ => F δ)) 
+  := by
+    sorry
+
