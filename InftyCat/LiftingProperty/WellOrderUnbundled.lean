@@ -13,6 +13,8 @@ class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
 
 namespace WellOrderUnbundled
 
+open SuccOrder
+
 
 theorem inf_exists
   {α : Type v} [iwo : WellOrderUnbundled α]
@@ -67,7 +69,7 @@ noncomputable def inf
     use ⟨β, hβ⟩
   (Classical.choice (nonempty_of_exists hq)).val
 
-lemma inf_is_inf
+lemma inf_is_min
   {α : Type v} [WellOrderUnbundled α]
   (p : α → Prop)
   (h : ∃ β, p β) :
@@ -83,7 +85,7 @@ lemma inf_is_in
   (p : α → Prop)
   (h : ∃ β, p β) :
   p (inf p h) := by
-    rcases (inf_is_inf p h) with ⟨q, _⟩
+    rcases (inf_is_min p h) with ⟨q, _⟩
     exact q
 
 
@@ -92,13 +94,13 @@ lemma inf_is_le
   (p : α → Prop)
   (h : ∃ β, p β) :
   ∀ β, p β → (inf p h) ≤ β := by
-    rcases (inf_is_inf p h) with ⟨_, q⟩
+    rcases (inf_is_min p h) with ⟨_, q⟩
     exact q
 
 -- p (inf p h ) ∧ ∀ (β : α), p β → μ ≤ β
 
 
-variable {α : Type v} [WellOrderUnbundled α]
+variable {α : Type v} [hwos : WellOrderUnbundled α]
 
 noncomputable def succMap (β : α) (h : ¬IsMax β) : α :=
   inf (β < ·) (Iff.mp not_isMax_iff h)
@@ -114,14 +116,10 @@ lemma succMap_le_of_lt {β γ : α} (h : ¬IsMax β) (hc: β < γ)
 
 
 
-noncomputable instance
-  (α : Type v) [WellOrderUnbundled α] [ne : Nonempty α]
-  : Zero α where
+noncomputable instance [ne : Nonempty α] : Zero α where
   zero := inf (fun _ => True) (by use ne.some)
 
-noncomputable instance
-  (α : Type v) [WellOrderUnbundled α] [Nonempty α]
-  : OrderBot α where
+noncomputable instance [Nonempty α] : OrderBot α where
   bot := 0
   bot_le := by
     intro β
@@ -133,17 +131,9 @@ noncomputable instance
 
 
 
-end WellOrderUnbundled
-
 -- End of 'namespace WellOrderUnbundled'
 
-open WellOrderUnbundled
-
-
-variable {α : Type v} [hwos : WellOrderUnbundled α] [NoMaxOrder α]
-
-noncomputable
-instance SuccOrder.ofWellOrder : SuccOrder α where
+noncomputable instance [NoMaxOrder α] : SuccOrder α where
   succ β := succMap β (not_isMax β) 
   le_succ := by
     intro β
@@ -175,4 +165,76 @@ instance SuccOrder.ofWellOrder : SuccOrder α where
         (succMap_le_of_lt (not_isMax β) h)
         (succMap_le_of_lt (not_isMax γ) (lt_of_not_le ha))
     exact LT.lt.false (lt_of_lt_of_le h₁ h₂)
+
+
+def is_limit [NoMaxOrder α] (β : α) : Prop := 
+  (∃ γ, γ < β) ∧ (∀ γ, β ≠ succ γ)
+
+
+
+theorem induction [Nonempty α] [NoMaxOrder α]
+  {C : α → Prop}
+  (B : C 0)
+  (S : ∀ β, C β → C (succ β))
+  (L : ∀ β, (is_limit β ∧ (∀ γ < β, C γ)) → C β)
+  : ∀ β, C β := by
+  by_contra ha
+  push_neg at ha
+  let μ := inf (fun β => ¬C β) ha
+  have ⟨hμ, hmμ⟩ : ¬C μ ∧  ∀ β, ¬C β → μ ≤ β :=
+    inf_is_min (fun β => ¬C β) ha
+  by_cases hz : μ = 0
+  · rw [←hz] at B
+    contradiction
+  · by_cases hlim : is_limit μ
+    · have hn : ∀ γ < μ, C γ := by
+        intro γ hγ
+        by_contra hb
+        have _ : μ ≤ γ := hmμ γ hb
+        rw [lt_iff_le_not_le] at hγ
+        have _ := hγ.2
+        contradiction
+      have _ : C μ := L μ ⟨hlim, hn⟩
+      contradiction
+    · have hs : ∃ γ, μ = succ γ := by
+        by_contra hb
+        push_neg at hb
+        have hc : ∃ γ, γ < μ := by
+          by_contra hd
+          push_neg at hd
+          have h₁ : μ ≤ 0 := hd 0
+          have h₂ : 0 ≤ μ := by
+            have hj : (0 : α) ≤ ⊥ := by
+              simp only [le_bot_iff]
+              trivial
+            have hi : ⊥ ≤ μ := by simp only [bot_le]
+            exact le_trans hj hi
+          have _ := le_antisymm h₁ h₂
+          contradiction
+        have _ : is_limit μ := by
+          constructor
+          · exact hc
+          · exact hb
+        contradiction
+      rcases hs with ⟨γ, hγ⟩
+      have h₁ : γ < μ := by
+        by_contra hb
+        push_neg at hb
+        have hc : succ γ ≤ γ := by
+          rw [← hγ]
+          exact hb
+        have _ : IsMax γ := max_of_succ_le hc
+        have _ : ¬IsMax γ := by
+          simp only [gt_iff_lt, not_isMax, not_false_eq_true]
+        contradiction
+      have h₂ : C γ := by
+        by_contra hb
+        have _ : γ < γ := lt_of_lt_of_le h₁ (hmμ γ hb)
+        apply lt_irrefl γ
+        assumption
+      have h₃ : C μ := by
+        have hb : C (succ γ) := S γ h₂
+        rw [←hγ] at hb
+        assumption
+      contradiction
 
