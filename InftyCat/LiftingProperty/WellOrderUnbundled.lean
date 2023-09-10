@@ -102,17 +102,58 @@ lemma inf_is_le
 
 variable {α : Type v} [hwos : WellOrderUnbundled α]
 
+
+lemma succ_cond (β : α) : ∃ γ, β < γ ∨ IsMax γ := by
+  by_cases h : ∃ (γ : α), IsMax γ
+  · rcases h with ⟨γ, hγ⟩
+    use γ
+    right
+    assumption
+  · push_neg at h
+    have h := h β
+    have hl : ∃ γ, β < γ := by
+      by_contra ha
+      push_neg at ha
+      have _ : IsMax β := by
+        intro γ _
+        apply ha
+      contradiction
+    rcases hl with ⟨γ, hγ⟩
+    use γ
+    left
+    assumption
+
+noncomputable def succMap (β : α) : α :=
+  inf (fun γ => β < γ ∨ IsMax γ) (succ_cond β)
+
+/-
 noncomputable def succMap (β : α) (h : ¬IsMax β) : α :=
   inf (β < ·) (Iff.mp not_isMax_iff h)
+-/
 
-lemma succMap_lt (β : α) (h : ¬IsMax β) : β < succMap β h :=
-  inf_is_in (β < ·) (Iff.mp not_isMax_iff h)
+lemma succMap_le (β : α) : β < succMap β ∨ IsMax β := by
+  have p : β < (succMap β) ∨ IsMax (succMap β)  :=
+    inf_is_in (fun γ => β < γ ∨ IsMax γ) (succ_cond β)
+  by_cases h : IsMax β
+  · right
+    assumption
+  · left
+    by_cases ha : IsMax (succMap β)
+    · by_contra hb
+      push_neg at hb
+      have heq : β = succMap β := le_antisymm (ha hb) hb
+      rw [heq] at h
+      contradiction
+    · rcases p with (hl | hr)
+      · assumption
+      · contradiction
+    
 
-lemma succMap_le_of_lt {β γ : α} (h : ¬IsMax β) (hc: β < γ)
-  : succMap β h ≤ γ := by
-  have t := inf_is_le (β < ·) (Iff.mp not_isMax_iff h)
-  specialize t γ hc
-  exact t
+lemma succMap_le_of_lt {β γ : α} (h: β < γ) : succMap β ≤ γ := by
+  have p : ∀ δ, ((β < δ  ∨ IsMax δ) → succMap β ≤ δ) :=
+    inf_is_le (fun γ => β < γ ∨ IsMax γ) (succ_cond β)
+  specialize p γ (by left; assumption)
+  assumption
 
 
 
@@ -131,10 +172,10 @@ noncomputable instance [Nonempty α] : OrderBot α where
 
 
 
--- End of 'namespace WellOrderUnbundled'
+-- Add a SuccOrder structure on well orders
 
 noncomputable instance [NoMaxOrder α] : SuccOrder α where
-  succ β := succMap β (not_isMax β) 
+  succ β := succMap β
   le_succ := by
     intro β
     dsimp only
@@ -169,7 +210,6 @@ noncomputable instance [NoMaxOrder α] : SuccOrder α where
 
 def is_limit [NoMaxOrder α] (β : α) : Prop := 
   (∃ γ, γ < β) ∧ (∀ γ, β ≠ succ γ)
-
 
 
 theorem induction [Nonempty α] [NoMaxOrder α]
