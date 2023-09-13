@@ -1,3 +1,7 @@
+/-
+Authors: Herman Rohrbach, Jon Eugster, Sina ..., Marcus Nicolas, ...
+-/
+
 import Mathlib.CategoryTheory.MorphismProperty
 import Mathlib.CategoryTheory.LiftingProperties.Basic
 
@@ -55,7 +59,7 @@ class HasLeftLiftingProperty {x y : C} (I : MorphismProperty C) (f : x ⟶ y) : 
 class HasRightLiftingProperty {x y : C} (I : MorphismProperty C) (g : x ⟶ y) : Prop where
   lift : (rightLiftingProperty I) g
 
-theorem op_of_LLPisRRP {x y : C} (I : MorphismProperty C) (f : x ⟶ y) : 
+theorem op_of_LLPisRLP {x y : C} (I : MorphismProperty C) (f : x ⟶ y) : 
     HasLeftLiftingProperty I.op f.op ↔ HasRightLiftingProperty I f := by
   constructor
   · intro h
@@ -118,13 +122,3 @@ instance of_comp {x y z : C} (f : x ⟶ y) (g : y ⟶ z)
   exact HasLiftingProperty.of_comp_right i f g ⟩
 
 end HasLeftLiftingProperty
-
-
--- Stability properties
-
--- def Stab
-
-
-
-
--- Lemma: relate llp(I) and rlp(op(I))
