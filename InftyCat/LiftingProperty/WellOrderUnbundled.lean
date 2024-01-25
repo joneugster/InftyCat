@@ -7,7 +7,7 @@ import Mathlib.CategoryTheory.Category.Preorder
 
 -- Unbundled version of the 'WellOrder' type
 class WellOrderUnbundled (α : Type v) extends LinearOrder α :=
-  wo : IsWellOrder α (· < ·)
+  iwf : IsWellFounded α (· < ·)
 
 
 
@@ -50,7 +50,7 @@ theorem inf_exists
       specialize hr γ hγ hs
       trivial
   rcases h with ⟨β, hβ⟩
-  have test := WellFounded.induction iwo.wo.wf β rs
+  have test := WellFounded.induction iwo.iwf.wf β rs
   have q : ∃ μ ≤ β, p μ := by use β
   show hc
   exact test q
@@ -131,12 +131,21 @@ noncomputable def succMap (β : α) (h : ¬IsMax β) : α :=
   inf (β < ·) (Iff.mp not_isMax_iff h)
 -/
 
-lemma succMap_le (β : α) : β < succMap β ∨ IsMax β := by
+lemma succMap_le (β : α) : β < succMap β ∨ (IsMax β ∧ β = (succMap β)) := by
   have p : β < (succMap β) ∨ IsMax (succMap β)  :=
     inf_is_in (fun γ => β < γ ∨ IsMax γ) (succ_cond β)
   by_cases h : IsMax β
   · right
-    assumption
+    constructor
+    · assumption
+    · cases p with
+    | inl hp =>
+      have _ : ¬(β < succMap β) := IsMax.not_lt h
+      contradiction
+    | inr hp =>
+      exact le_antisymm
+        (le_of_not_lt (IsMax.not_lt hp))
+        (le_of_not_lt (IsMax.not_lt h))
   · left
     by_cases ha : IsMax (succMap β)
     · by_contra hb
@@ -169,50 +178,76 @@ noncomputable instance [Nonempty α] : OrderBot α where
     apply h
     exact trivial
 
+noncomputable instance : WellOrderUnbundled (WithTop α) where
+  iwf := {
+    wf := WithTop.wellFounded_lt hwos.iwf.wf
+  }
+
 
 
 
 -- Add a SuccOrder structure on well orders
 
-noncomputable instance [NoMaxOrder α] : SuccOrder α where
-  succ β := succMap β
+noncomputable instance : SuccOrder α where
+  succ := succMap
   le_succ := by
     intro β
-    dsimp only
-    have t : β < succMap β (not_isMax β) :=
-      succMap_lt β (not_isMax β)
-    exact LT.lt.le t
+    cases (succMap_le β) with
+    | inl h =>
+      exact LT.lt.le h
+    | inr h =>
+      exact Eq.le h.right
   max_of_succ_le := by
     intro β
-    simp only [not_isMax]
-    have t : β < succMap β (not_isMax β) :=
-      succMap_lt β (not_isMax β)
-    intro h
-    have s : β < β := lt_of_lt_of_le t h
-    apply lt_irrefl β
-    assumption
+    intro hi
+    cases (succMap_le β) with
+    | inl h =>
+      have _ : β < β := lt_of_lt_of_le h hi
+      have _ := lt_irrefl β
+      contradiction
+    | inr h =>
+      exact h.left
   succ_le_of_lt := by
     intro β γ
-    simp only [not_isMax]
-    intro h
-    exact succMap_le_of_lt (not_isMax β) h
+    intro hi
+    exact succMap_le_of_lt hi
   le_of_lt_succ := by
     intro β γ h
     by_contra ha
-    have h₁ : β < succMap β (not_isMax β) :=
-      succMap_lt β (not_isMax β)
-    have h₂ :=
-      le_trans
-        (succMap_le_of_lt (not_isMax β) h)
-        (succMap_le_of_lt (not_isMax γ) (lt_of_not_le ha))
-    exact LT.lt.false (lt_of_lt_of_le h₁ h₂)
+    have hb : γ < β :=
+      lt_of_not_ge ha
+    have hc : succMap γ ≤ β :=
+      succMap_le_of_lt hb
+    cases (succMap_le γ) with
+    | inl hp =>
+      have _ : β < β := lt_of_lt_of_le h hc
+      have _ := lt_irrefl β
+      contradiction
+    | inr hp =>
+      have hy : ¬(γ < β) :=
+        IsMax.not_lt hp.left 
+      contradiction
 
 
-def is_limit [NoMaxOrder α] (β : α) : Prop := 
-  (∃ γ, γ < β) ∧ (∀ γ, β ≠ succ γ)
+def is_limit (β : α) : Prop := 
+  (∃ γ, γ < β) ∧ (∀ γ < β, β ≠ succ γ)
 
 
-theorem induction [Nonempty α] [NoMaxOrder α]
+theorem succ_of_not_zero_or_limit [Nonempty α]
+  {β : α}
+  (hz : β ≠ 0)
+  (hl : ¬(is_limit β))
+  : ∃ γ, γ < β ∧ β = succ γ := by
+  by_contra ha
+  push_neg at ha
+  have _ : is_limit β := by
+    constructor
+    · use 0
+      exact LE.le.lt_of_ne' (OrderBot.bot_le β) hz
+    · assumption
+  contradiction
+
+theorem induction [Nonempty α]
   {C : α → Prop}
   (B : C 0)
   (S : ∀ β, C β → C (succ β))
@@ -236,27 +271,9 @@ theorem induction [Nonempty α] [NoMaxOrder α]
         contradiction
       have _ : C μ := L μ ⟨hlim, hn⟩
       contradiction
-    · have hs : ∃ γ, μ = succ γ := by
-        by_contra hb
-        push_neg at hb
-        have hc : ∃ γ, γ < μ := by
-          by_contra hd
-          push_neg at hd
-          have h₁ : μ ≤ 0 := hd 0
-          have h₂ : 0 ≤ μ := by
-            have hj : (0 : α) ≤ ⊥ := by
-              simp only [le_bot_iff]
-              trivial
-            have hi : ⊥ ≤ μ := by simp only [bot_le]
-            exact le_trans hj hi
-          have _ := le_antisymm h₁ h₂
-          contradiction
-        have _ : is_limit μ := by
-          constructor
-          · exact hc
-          · exact hb
-        contradiction
-      rcases hs with ⟨γ, hγ⟩
+    · have hs : ∃ γ, γ < μ ∧ μ = succ γ :=
+        succ_of_not_zero_or_limit hz hlim
+      rcases hs with ⟨γ, ⟨hi, hγ⟩⟩
       have h₁ : γ < μ := by
         by_contra hb
         push_neg at hb
@@ -264,8 +281,7 @@ theorem induction [Nonempty α] [NoMaxOrder α]
           rw [← hγ]
           exact hb
         have _ : IsMax γ := max_of_succ_le hc
-        have _ : ¬IsMax γ := by
-          simp only [gt_iff_lt, not_isMax, not_false_eq_true]
+        have _ : ¬IsMax γ := not_isMax_of_lt hi
         contradiction
       have h₂ : C γ := by
         by_contra hb
@@ -282,6 +298,8 @@ theorem induction [Nonempty α] [NoMaxOrder α]
 
 /- This will enable us to construct mathematical objects by
    ordinal recursion -/
+
+-- Proof: by induction on (WithTop α)
 
 theorem fix_exists [Nonempty α] [NoMaxOrder α]
   {C : α → Sort*}
